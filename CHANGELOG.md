@@ -2,6 +2,21 @@
 
 Notable changes made in this fork ([SimonGeiger/info-orbs-widget-expansion](https://github.com/SimonGeiger/info-orbs-widget-expansion)), on top of the upstream [brettdottech/info-orbs](https://github.com/brettdottech/info-orbs) project. Format loosely follows [Keep a Changelog](https://keepachangelog.com/), versioned independently from upstream.
 
+## [1.3.0] - 2026-07-07
+
+### Added
+
+- **Pomodoro Timer widget** — offline Focus / Short Break / Long Break cycle with a tomato mascot, a 4-session cycle tracker, and a percentage-based countdown ring. See the [README](README.md#pomodoro-timer-widget) for usage and [ADR-002](docs/adr/ADR-002-pomodoro-widget.md) for the full technical design.
+  - No network/WiFi involved; state lives in RAM and resets on reboot.
+  - Manual phase progression only (no auto-start, no pause); medium press completes a phase early, long press resets the cycle.
+  - Since there's no speaker, a completed phase flashes the display and forces it back into view even from another widget.
+- `Widget::backgroundTick()` — a new no-op-by-default hook called on every widget every loop (not just the current one), so a widget can keep tracking time while off-screen. Used by the Pomodoro widget to notice phase completion even when another widget is being shown.
+- `WidgetSet::switchToWidget()` — lets a widget force itself to become the currently displayed one.
+
+### Changed
+
+- Welcome screen now shows `version: 1.3.0`.
+
 ## [1.2.0] - 2026-07-06
 
 ### Added

@@ -6,6 +6,7 @@
 #include "clockwidget/ClockWidget.h"
 #include "config_helper.h"
 #include "icons.h"
+#include "pomodorowidget/PomodoroWidget.h"
 #include "weatherwidget/WeatherWidget.h"
 #include "webdatawidget/WebDataWidget.h"
 #include "wifiwidget/WifiWidget.h"
@@ -49,6 +50,7 @@ bool isConnected{true};
 
 ScreenManager *sm;
 WidgetSet *widgetSet;
+Widget *m_lastCurrentWidget{nullptr};
 
 // This function should probably be moved somewhere else
 bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap) {
@@ -100,7 +102,7 @@ void setup() {
     sm->drawCentreString("by", ScreenCenterX, ScreenCenterY - 5, 22);
     sm->drawCentreString("brett.tech", ScreenCenterX, ScreenCenterY + 30, 22);
     sm->setFontColor(TFT_RED);
-    sm->drawCentreString("version: 1.2.0", ScreenCenterX, ScreenCenterY + 65, 14);
+    sm->drawCentreString("version: 1.3.0", ScreenCenterX, ScreenCenterY + 65, 14);
 
     sm->selectScreen(2);
 
@@ -125,6 +127,7 @@ void setup() {
     globalTime = GlobalTime::getInstance();
 
     widgetSet->add(new ClockWidget(*sm));
+    widgetSet->add(new PomodoroWidget(*sm, *widgetSet));
 #ifdef PARQET_PORTFOLIO_ID
     widgetSet->add(new ParqetWidget(*sm));
 #endif
@@ -204,8 +207,16 @@ void loop() {
         checkButtons();
 
         widgetSet->updateCurrent();
+        widgetSet->tickBackground(); // lets off-screen widgets (e.g. Pomodoro) keep tracking time and force a switch back
         widgetSet->updateBrightnessByTime(globalTime->getHour24());
         widgetSet->drawCurrent();
+
+        if (widgetSet->getCurrent() != m_lastCurrentWidget) {
+            // Give the newly-shown widget (whether switched to by a button or forced,
+            // e.g. a completed Pomodoro phase) the full cycle window before auto-cycling away.
+            m_lastCurrentWidget = widgetSet->getCurrent();
+            m_widgetCycleDelayPrev = millis();
+        }
 
         checkCycleWidgets();
     }

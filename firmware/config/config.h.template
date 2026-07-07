@@ -53,6 +53,12 @@
     // optional - uncomment only what you want to change from its default (shown in each comment).
     //#define CALENDAR_ICS_URL "https://calendar.google.com/calendar/ical/xxxx/private-xxxx/basic.ics" // Secret ICS feed URL for your calendar - treat this like a password, do not share/commit it
 
+    // POMODORO CONFIGURATION
+    // Always enabled (no network needed). Uncomment to change a default duration (in minutes).
+    //#define POMODORO_FOCUS_MINUTES 25       // Default: 25. Length of a Focus session
+    //#define POMODORO_SHORT_BREAK_MINUTES 5  // Default: 5. Length of a Short Break (follows Focus #1-3)
+    //#define POMODORO_LONG_BREAK_MINUTES 15  // Default: 15. Length of a Long Break (follows Focus #4)
+
     // WIFI CONFIGURATION
     // Normally WiFi should be configured using a smartphone or computer to connect to the Info-Orbs
     // configuration portal. But as a fall-back method, WiFi can be setup by uncommenting these 2 lines and
@@ -152,5 +158,14 @@
         #define CALENDAR_MAX_EXDATES_PER_MASTER 6       // Default: 6. How many individual dates can be skipped within one repeating event (e.g. "every Monday, except the 25th")
     #endif
 
+    #ifndef POMODORO_FOCUS_MINUTES
+        #define POMODORO_FOCUS_MINUTES 25       // Default: 25. Length of a Focus session, in minutes
+    #endif
+    #ifndef POMODORO_SHORT_BREAK_MINUTES
+        #define POMODORO_SHORT_BREAK_MINUTES 5       // Default: 5. Length of a Short Break, in minutes
+    #endif
+    #ifndef POMODORO_LONG_BREAK_MINUTES
+        #define POMODORO_LONG_BREAK_MINUTES 15       // Default: 15. Length of a Long Break, in minutes
+    #endif
 
 #endif

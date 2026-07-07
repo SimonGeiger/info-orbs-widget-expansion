@@ -2,7 +2,7 @@
 
 # Info Orbs — Widget Expansion (Simon Geiger's fork)
 
-This is a personal fork of [brettdottech/info-orbs](https://github.com/brettdottech/info-orbs), an open source ESP32-based desk display with five round TFT screens ("orbs"). This fork adds new widgets on top of the upstream project — currently a **Calendar widget** (see below).
+This is a personal fork of [brettdottech/info-orbs](https://github.com/brettdottech/info-orbs), an open source ESP32-based desk display with five round TFT screens ("orbs"). This fork adds new widgets on top of the upstream project — currently a **Calendar widget** and a **Pomodoro Timer widget** (see below).
 
 > This fork isn't affiliated with or supported by the upstream project's Discord/community — please only reach out there for questions about the base hardware/firmware, not for issues specific to the widgets added here.
 
@@ -57,9 +57,39 @@ Shows your calendar right on the orbs: a clock, a month-at-a-glance grid, and an
 - timezones are handled correctly for a curated list of common named zones (not full `VTIMEZONE`-block parsing — see [ADR-001](docs/adr/ADR-001-calendar-widget.md) for the exact scope and rationale, and for anyone wanting the full technical design behind this widget). 
 - only been verified against Google Calendar and Outlook/Microsoft 365 `.ics` feeds so far — feedback on other providers (iCloud, etc.) is very welcome.
 
+## Pomodoro Timer Widget
+
+A Pomodoro timer that needs no network connection — the classic Focus / Short Break / Long Break cycle, entirely visual (the hardware has no speaker), with a tomato mascot whose expression changes with each phase.
+
+<!-- TODO: add a photo of the pomodoro widget in action -->
+
+**What it brings you:**
+- **Orb 1 — Clock.** Date, time and weekday, same layout as the weather widget's clock.
+- **Orb 2 — Title + mascot.** A tomato whose look changes with the phase: green (unripe) while preparing, determined with a sweat drop during Focus, smiling with rosy cheeks on a Short Break, asleep under a crescent moon on a Long Break.
+- **Orb 3 — Cycle tracker.** 4 tomato icons showing progress through the current 4-Focus-session cycle (filled = completed, ringed = current, outlined = upcoming). Resets after a Long Break.
+- **Orb 4 — Phase label**, e.g. "Focus Time #2", "Short Break #1", "Long Break" — and the completion message ("Focus completed", etc.) once a phase finishes.
+- **Orb 5 — Countdown + progress ring.** MM:SS remaining inside a circular arc that fills as the phase progresses. During Preparation (no timer yet), this orb shows on-device instructions instead.
+- Since there's no audio, a phase finishing (naturally or via early completion) flashes the display and forces it back into view even if you were looking at a different widget — so you never miss it.
+
+**Setup:** nothing required — this widget is always enabled. Optionally, override the default durations (25 / 5 / 15 minutes) in `firmware/config/config.h`:
+```c
+#define POMODORO_FOCUS_MINUTES 25
+#define POMODORO_SHORT_BREAK_MINUTES 5
+#define POMODORO_LONG_BREAK_MINUTES 15
+```
+
+**Using it:**
+- Middle short press — start the timer from Preparation, or advance into the next phase once one has completed.
+- Middle medium press — complete the current phase early (counts the same as a natural completion).
+- Middle long press — reset back to Preparation and clear cycle progress. No confirmation prompt.
+- There is no pause — a running phase can only be completed or reset.
+- Left/right — cycle to other widgets, same as everywhere else.
+
+See [ADR-002](docs/adr/ADR-002-pomodoro-widget.md) for the full design rationale.
+
 ## Changelog
 
-Notable changes in this fork (current version: **1.2.0**) are tracked in [CHANGELOG.md](CHANGELOG.md).
+Notable changes in this fork (current version: **1.3.0**) are tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

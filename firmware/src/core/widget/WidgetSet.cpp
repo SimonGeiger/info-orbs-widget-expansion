@@ -54,6 +54,24 @@ void WidgetSet::prev() {
     switchWidget();
 }
 
+void WidgetSet::switchToWidget(Widget *widget) {
+    for (int8_t i = 0; i < m_widgetCount; i++) {
+        if (m_widgets[i] == widget) {
+            if (m_currentWidget != i) {
+                m_currentWidget = i;
+                switchWidget();
+            }
+            return;
+        }
+    }
+}
+
+void WidgetSet::tickBackground() {
+    for (int8_t i = 0; i < m_widgetCount; i++) {
+        m_widgets[i]->backgroundTick();
+    }
+}
+
 void WidgetSet::switchWidget() {
     m_screenManager->clearAllScreens();
     getCurrent()->setup();

@@ -16,7 +16,9 @@ public:
     Widget *getCurrent();
     void next();
     void prev();
+    void switchToWidget(Widget *widget);
     void buttonPressed(uint8_t buttonId, ButtonState state);
+    void tickBackground();
     void showLoading();
     void updateAll();
     bool initialUpdateDone();
