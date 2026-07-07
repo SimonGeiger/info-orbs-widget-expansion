@@ -19,73 +19,66 @@ Once you have the base project cloned, built, and flashing successfully (per the
 
 ## Calendar Widget
 
-Shows your calendar right on the orbs: a clock, a month-at-a-glance grid, and an agenda of upcoming events — synced from any calendar that can publish a standard `.ics` feed (Google Calendar, Outlook/Microsoft 365, iCloud, etc.).
+Your calendar on the orbs: a clock, a month grid, and an agenda — synced from any standard `.ics` feed (Google Calendar, Outlook/Microsoft 365, iCloud, etc.). Full design rationale in [ADR-001](docs/adr/ADR-001-calendar-widget.md).
 
-<!-- TODO: add a photo of the calendar widget in action -->
+<!-- TODO: screenshot of the calendar widget in action -->
 
-**What it brings you:**
-- **Orb 1 — Clock.** Reuses the existing clock widget.
-- **Orb 2 — Month grid.** Current month, today highlighted, with an indicator showing how long ago the calendar last synced.
-- **Orbs 3–5 — Agenda**, toggleable between two modes:
-  - *Next 3 events* — your next few upcoming events, title + time.
-  - *Next 3 days* — a day-by-day view of what's coming up, several events per day.
-  - An event that's currently happening is highlighted with a ring so it's obvious at a glance.
-- Recurring events are supported (daily/weekly/monthly/yearly patterns, including things like "2nd Wednesday of the month"), including individually-rescheduled or cancelled occurrences.
-- Declined and cancelled events are automatically filtered out.
-- Calendars authored in a different timezone than your device convert correctly for a curated set of common named timezones (see limitations below).
+**Orbs:**
+- **1 — Clock.** Reuses the existing clock widget.
+- **2 — Month grid.** Current month, today highlighted, plus a last-synced indicator.
+- **3–5 — Agenda**, toggleable between *Next 3 events* and *Next 3 days*; an event happening right now is ringed.
+
+Recurring events (daily/weekly/monthly/yearly, including patterns like "2nd Wednesday of the month") are expanded, with individually-rescheduled/cancelled occurrences and declined/cancelled events filtered out automatically. Calendars in a different timezone than your device convert correctly for a curated set of common named timezones.
 
 **Setup:**
-1. Get a secret `.ics` URL from your calendar provider (in Google Calendar: Settings → your calendar → "Secret address in iCal format"; Outlook: Settings → Shared calendars → "Publish a calendar"). Treat this URL like a password — anyone with it can read your calendar.
-2. In `firmware/config/config.h` (see the upstream setup guide for how to create this file from `config.h.template`), set:
+1. Get a secret `.ics` URL from your provider (Google Calendar: Settings → your calendar → "Secret address in iCal format"; Outlook: Settings → Shared calendars → "Publish a calendar"). Treat it like a password.
+2. In `firmware/config/config.h` (created from `config.h.template` per the upstream setup guide):
    ```c
    #define CALENDAR_ICS_URL "https://your-calendar-provider.example/your-secret-feed.ics"
    ```
-3. Optionally raise `CALENDAR_MAX_EVENTS` (default 40) if you have a busy calendar and want more upcoming events kept in memory:
+3. Optionally raise `CALENDAR_MAX_EVENTS` (default 40) for a busier calendar:
    ```c
    #define CALENDAR_MAX_EVENTS 80
    ```
-4. Flash as usual. The calendar syncs automatically at boot and every hour after that.
+4. Flash as usual. Syncs at boot and every hour after that.
 
-**Using it:**
+**Controls:**
 - Middle short press — switch between page 1/2 of the current agenda mode.
 - Middle medium press — switch orbs 3–5 between "Next 3 events" and "Next 3 days".
-- Middle long press — force an immediate re-sync of the calendar.
+- Middle long press — force an immediate re-sync.
 - Left/right — cycle to other widgets, same as everywhere else.
 
-**Known limitations:** 
-- a single `.ics` source at a time; 
-- timezones are handled correctly for a curated list of common named zones (not full `VTIMEZONE`-block parsing — see [ADR-001](docs/adr/ADR-001-calendar-widget.md) for the exact scope and rationale, and for anyone wanting the full technical design behind this widget). 
-- only been verified against Google Calendar and Outlook/Microsoft 365 `.ics` feeds so far — feedback on other providers (iCloud, etc.) is very welcome.
+**Limitations:** one `.ics` source at a time; timezones handled for a curated list of common named zones only (not full `VTIMEZONE` parsing — see ADR-001); only verified against Google Calendar and Outlook/Microsoft 365 so far.
 
 ## Pomodoro Timer Widget
 
-A Pomodoro timer that needs no network connection — the classic Focus / Short Break / Long Break cycle, entirely visual (the hardware has no speaker), with a tomato mascot whose expression changes with each phase.
+An offline Pomodoro timer — Focus / Short Break / Long Break, entirely visual since the hardware has no speaker, with a tomato mascot whose expression changes per phase. Full design rationale in [ADR-002](docs/adr/ADR-002-pomodoro-widget.md).
 
-<!-- TODO: add a photo of the pomodoro widget in action -->
+<!-- TODO: screenshot of the pomodoro widget in action -->
 
-**What it brings you:**
-- **Orb 1 — Clock.** Date, time and weekday, same layout as the weather widget's clock.
-- **Orb 2 — Title + mascot.** A tomato whose look changes with the phase: green (unripe) while preparing, determined with a sweat drop during Focus, smiling with rosy cheeks on a Short Break, asleep under a crescent moon on a Long Break.
-- **Orb 3 — Cycle tracker.** 4 tomato icons showing progress through the current 4-Focus-session cycle (filled = completed, ringed = current, outlined = upcoming). Resets after a Long Break.
-- **Orb 4 — Phase label**, e.g. "Focus Time #2", "Short Break #1", "Long Break" — and the completion message ("Focus completed", etc.) once a phase finishes.
-- **Orb 5 — Countdown + progress ring.** MM:SS remaining inside a circular arc that fills as the phase progresses. During Preparation (no timer yet), this orb shows on-device instructions instead.
-- Since there's no audio, a phase finishing (naturally or via early completion) flashes the display and forces it back into view even if you were looking at a different widget — so you never miss it.
+**Orbs:**
+- **1 — Clock.** Same layout as the weather widget's clock.
+- **2 — Title + mascot.** Green (unripe) while preparing, determined with a sweat drop during Focus, smiling with rosy cheeks on a Short Break, asleep under a crescent moon on a Long Break.
+- **3 — Cycle tracker.** 4 tomato icons tracking the current 4-Focus-session cycle (filled = completed, ringed = current, outlined = upcoming). Resets after a Long Break.
+- **4 — Phase label**, e.g. "Focus Time #2", plus the completion message ("Focus completed", etc.) once a phase finishes.
+- **5 — Countdown + progress ring.** MM:SS inside a circular arc that fills as the phase progresses. Shows on-device instructions instead during Preparation (no timer yet).
 
-**Setup:** nothing required — this widget is always enabled. Optionally, override the default durations (25 / 5 / 15 minutes) in `firmware/config/config.h`:
+Since there's no audio, a phase finishing (naturally or via early completion) flashes the display and forces it back into view even from another widget — so it's never missed.
+
+**Setup:** nothing required — always enabled. Optionally override the default durations (25 / 5 / 15 minutes) in `firmware/config/config.h`:
 ```c
 #define POMODORO_FOCUS_MINUTES 25
 #define POMODORO_SHORT_BREAK_MINUTES 5
 #define POMODORO_LONG_BREAK_MINUTES 15
 ```
 
-**Using it:**
-- Middle short press — start the timer from Preparation, or advance into the next phase once one has completed.
-- Middle medium press — complete the current phase early (counts the same as a natural completion).
-- Middle long press — reset back to Preparation and clear cycle progress. No confirmation prompt.
-- There is no pause — a running phase can only be completed or reset.
+**Controls:**
+- Middle short press — start from Preparation, or advance to the next phase once one has completed.
+- Middle medium press — complete the current phase early (same effect as a natural completion).
+- Middle long press — reset to Preparation and clear cycle progress. No confirmation prompt.
 - Left/right — cycle to other widgets, same as everywhere else.
 
-See [ADR-002](docs/adr/ADR-002-pomodoro-widget.md) for the full design rationale.
+There is no pause — a running phase can only be completed or reset.
 
 ## Changelog
 
