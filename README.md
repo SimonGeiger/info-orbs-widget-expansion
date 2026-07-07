@@ -1,6 +1,6 @@
 
 
-# Info Orbs — Widget Expansion (Simon Geiger's fork)
+# Info Orbs — Widget Expansion
 
 This is a personal fork of [brettdottech/info-orbs](https://github.com/brettdottech/info-orbs), an open source ESP32-based desk display with five round TFT screens ("orbs"). This fork adds new widgets on top of the upstream project — currently a **Calendar widget** (see below).
 
