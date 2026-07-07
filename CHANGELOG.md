@@ -16,6 +16,14 @@ Notable changes made in this fork ([SimonGeiger/info-orbs-widget-expansion](http
 ### Changed
 
 - Welcome screen now shows `version: 1.3.0`.
+- Extracted the clock-orb layout (date / big `HH:MM` / weekday) shared by the weather, calendar, and Pomodoro widgets into a single `ClockOrb` helper (`firmware/src/core/clockorb/`), replacing three near-identical copies.
+
+### Fixed
+
+- Pomodoro: the countdown display silently showed the wrong time for configured durations of 100+ minutes (e.g. `120:00` rendered as `12:00`); it's now clamped to the `99:59` the digit layout can show.
+- Pomodoro: completing a phase early within its first second left the orb 5 progress ring empty instead of full.
+- Pomodoro: the completion flash could be skipped entirely in the rare case a phase finished within ~1.2s of `millis()` wrapping around (~49.7 days of uptime).
+- Pomodoro: removed a redundant phase-expiry check that ran twice per loop iteration when the widget was on screen.
 
 ## [1.2.0] - 2026-07-06
 

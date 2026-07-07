@@ -1,5 +1,6 @@
 #include "PomodoroWidget.h"
 
+#include "ClockOrb.h"
 #include "Utils.h"
 #include "config_helper.h"
 
@@ -72,7 +73,8 @@ void PomodoroWidget::completePhase() {
     if (m_phase == Phase::FOCUS) {
         m_completedFocusCount++;
     }
-    m_flashEndMillis = millis() + FLASH_DURATION_MS;
+    m_flashActive = true;
+    m_flashStartMillis = millis();
     if (m_widgetSet.getCurrent() != this) {
         m_widgetSet.switchToWidget(this);
     }
@@ -88,13 +90,11 @@ void PomodoroWidget::advanceAfterCompletion() {
         }
         break;
     case Phase::SHORT_BREAK:
-        m_currentFocusNumber = m_completedFocusCount + 1;
         startPhase(Phase::FOCUS, focusDurationMs());
         break;
     case Phase::LONG_BREAK:
         m_phase = Phase::PREPARATION;
         m_completedFocusCount = 0;
-        m_currentFocusNumber = 0;
         m_timerRunning = false;
         m_awaitingAdvance = false;
         break;
@@ -109,8 +109,7 @@ void PomodoroWidget::resetCycle() {
     m_timerRunning = false;
     m_awaitingAdvance = false;
     m_completedFocusCount = 0;
-    m_currentFocusNumber = 0;
-    m_flashEndMillis = 0;
+    m_flashActive = false;
 }
 
 void PomodoroWidget::checkExpiry() {
@@ -132,7 +131,6 @@ void PomodoroWidget::buttonPressed(uint8_t buttonId, ButtonState state) {
         if (m_awaitingAdvance) {
             advanceAfterCompletion();
         } else if (m_phase == Phase::PREPARATION) {
-            m_currentFocusNumber = m_completedFocusCount + 1;
             startPhase(Phase::FOCUS, focusDurationMs());
         }
         break;
@@ -150,7 +148,9 @@ void PomodoroWidget::buttonPressed(uint8_t buttonId, ButtonState state) {
 }
 
 void PomodoroWidget::update(bool force) {
-    checkExpiry();
+    // Nothing to do here: backgroundTick() (called on every widget every loop, this one
+    // included) is the sole owner of checkExpiry() - it covers this widget whether or
+    // not it's currently on screen, so there's no separate "while visible" check needed.
 }
 
 uint32_t PomodoroWidget::accentColorForPhase(Phase phase) {
@@ -166,12 +166,19 @@ uint32_t PomodoroWidget::accentColorForPhase(Phase phase) {
     }
 }
 
+int PomodoroWidget::activeFocusNumber() {
+    // m_completedFocusCount only advances when a Focus session completes, so while one
+    // is running it's still one behind the session in progress; during the Short Break
+    // that follows, it has already caught up to that same session's number.
+    return m_phase == Phase::SHORT_BREAK ? m_completedFocusCount : m_completedFocusCount + 1;
+}
+
 String PomodoroWidget::phaseRunningLabel() {
     switch (m_phase) {
     case Phase::FOCUS:
-        return "Focus Time #" + String(m_currentFocusNumber);
+        return "Focus Time #" + String(activeFocusNumber());
     case Phase::SHORT_BREAK:
-        return "Short Break #" + String(m_currentFocusNumber);
+        return "Short Break #" + String(activeFocusNumber());
     case Phase::LONG_BREAK:
         return "Long Break";
     default:
@@ -193,7 +200,9 @@ String PomodoroWidget::phaseCompletedLabel() {
 }
 
 bool PomodoroWidget::isFlashing() {
-    return millis() < m_flashEndMillis;
+    // Wrap-safe: unsigned subtraction handles millis() wrapping around after ~49.7
+    // days, unlike a direct comparison against a precomputed end timestamp would.
+    return m_flashActive && millis() - m_flashStartMillis < FLASH_DURATION_MS;
 }
 
 int PomodoroWidget::flashFrame() {
@@ -215,23 +224,12 @@ void PomodoroWidget::draw(bool force) {
 
 void PomodoroWidget::drawClock(bool force) {
     GlobalTime *time = GlobalTime::getInstance();
-    int stamp = time->getHour() * 60 + time->getMinute();
+    int stamp = ClockOrb::stamp(*time);
     if (!force && stamp == m_lastClockStamp) {
         return;
     }
     m_lastClockStamp = stamp;
-
-    m_manager.selectScreen(0);
-    m_manager.fillScreen(TFT_BLACK);
-    m_manager.setFont(DEFAULT_FONT);
-    m_manager.setFontColor(TFT_WHITE, TFT_BLACK);
-
-    m_manager.drawCentreString(time->getDayAndMonth(), ScreenCenterX, 50, 18);
-    m_manager.drawCentreString(time->getWeekday(), ScreenCenterX, 190, 22);
-
-    m_manager.drawString(time->getHourPadded(), ScreenCenterX - CLOCK_COLON_GAP, CLOCK_Y, CLOCK_FONT_SIZE, Align::MiddleRight);
-    m_manager.drawString(":", ScreenCenterX, CLOCK_Y, CLOCK_FONT_SIZE, Align::MiddleCenter);
-    m_manager.drawString(time->getMinutePadded(), ScreenCenterX + CLOCK_COLON_GAP, CLOCK_Y, CLOCK_FONT_SIZE, Align::MiddleLeft);
+    ClockOrb::draw(m_manager, 0, *time);
 }
 
 // ---- Orb 2: title + mascot ----
@@ -493,8 +491,13 @@ void PomodoroWidget::drawCountdown(bool force) {
         return;
     }
 
+    // The digit layout only has room for MM:SS (2+2 digits) - a configured duration of
+    // 100+ minutes would otherwise silently truncate (e.g. 120:00 rendering as "12:00").
+    // Clamp what's *displayed* to 99:59; the ring's sweep is unaffected and keeps
+    // reflecting the real elapsed fraction of the phase.
+    int displaySeconds = remainingSeconds > 5999 ? 5999 : remainingSeconds;
     char digits[5];
-    snprintf(digits, sizeof(digits), "%02d%02d", remainingSeconds / 60, remainingSeconds % 60);
+    snprintf(digits, sizeof(digits), "%02d%02d", displaySeconds / 60, displaySeconds % 60);
     uint32_t accent = accentColorForPhase(m_phase);
 
     if (fullRedraw) {
@@ -508,7 +511,15 @@ void PomodoroWidget::drawCountdown(bool force) {
         m_manager.selectScreen(4);
         if (sweep > m_lastRingSweep) {
             if (sweep >= 360) {
-                m_manager.drawArc(ScreenCenterX, ScreenCenterY, 116, 102, (180 + m_lastRingSweep) % 360, 180, accent, TFT_BLACK);
+                // TFT_eSPI's drawArc() no-ops when startAngle == endAngle, which
+                // (180 + 0) % 360 == 180 would hit if nothing had been drawn yet (e.g.
+                // completing a phase early within its first ring-degree) - draw the
+                // full circle directly in that case instead of trying to "close" it.
+                if (m_lastRingSweep <= 0) {
+                    m_manager.drawArc(ScreenCenterX, ScreenCenterY, 116, 102, 0, 360, accent, TFT_BLACK);
+                } else {
+                    m_manager.drawArc(ScreenCenterX, ScreenCenterY, 116, 102, (180 + m_lastRingSweep) % 360, 180, accent, TFT_BLACK);
+                }
             } else {
                 m_manager.drawArc(ScreenCenterX, ScreenCenterY, 116, 102, (180 + m_lastRingSweep) % 360, (180 + sweep) % 360, accent, TFT_BLACK);
             }

@@ -1,5 +1,6 @@
 #include "CalendarWidget.h"
 
+#include "ClockOrb.h"
 #include "Utils.h"
 #include <TimeLib.h>
 #include <string.h>
@@ -16,22 +17,11 @@ void CalendarWidget::setup() {
 }
 
 void CalendarWidget::drawClock(int screenIndex) {
-    const int clockY = 120, dayOfWeekY = 190, dateY = 50, centre = 120;
-
-    m_manager.selectScreen(screenIndex);
-    m_manager.fillScreen(TFT_BLACK);
-    m_manager.setFontColor(TFT_WHITE, TFT_BLACK);
-
-    m_manager.drawCentreString(m_time->getDayAndMonth(), centre, dateY, 18);
-    m_manager.drawCentreString(m_time->getWeekday(), centre, dayOfWeekY, 22);
-
-    m_manager.drawString(m_time->getHourPadded(), centre - 10, clockY, 66, Align::MiddleRight);
-    m_manager.drawString(":", centre, clockY, 66, Align::MiddleCenter);
-    m_manager.drawString(m_time->getMinutePadded(), centre + 10, clockY, 66, Align::MiddleLeft);
+    ClockOrb::draw(m_manager, screenIndex, *m_time);
 }
 
 int CalendarWidget::getClockStamp() {
-    return m_time->getHour() * 60 + m_time->getMinute();
+    return ClockOrb::stamp(*m_time);
 }
 
 int CalendarWidget::daysInMonth(int year, int month) {

@@ -13,6 +13,7 @@
 #include "WeatherWidget.h"
 #include "icons.h"
 
+#include "ClockOrb.h"
 #include "config_helper.h"
 
 WeatherWidget::WeatherWidget(ScreenManager &manager) : Widget(manager) {
@@ -128,21 +129,7 @@ bool WeatherWidget::getWeatherData() {
 }
 
 void WeatherWidget::displayClock(int displayIndex) {
-    const int clockY = 120;
-    const int dayOfWeekY = 190;
-    const int dateY = 50;
-
-    m_manager.selectScreen(displayIndex);
-    m_manager.fillScreen(m_backgroundColor);
-    m_manager.setFontColor(m_foregroundColor);
-
-    m_manager.drawCentreString(m_time->getDayAndMonth(), centre, dateY, 18);
-    const String weekDay = m_time->getWeekday();
-    m_manager.drawCentreString(weekDay, centre, dayOfWeekY, 22);
-
-    m_manager.drawString(m_time->getHourPadded(), centre - 10, clockY, 66, Align::MiddleRight);
-    m_manager.drawString(":", centre, clockY, 66, Align::MiddleCenter);
-    m_manager.drawString(m_time->getMinutePadded(), centre + 10, clockY, 66, Align::MiddleLeft);
+    ClockOrb::draw(m_manager, displayIndex, *m_time, m_foregroundColor, m_backgroundColor);
 }
 
 // Write an image to the screen from a hex array.
@@ -302,7 +289,7 @@ void WeatherWidget::threeDayWeather(int displayIndex) {
 }
 
 int WeatherWidget::getClockStamp() {
-    return m_time->getHour() * 60 + m_time->getMinute();
+    return ClockOrb::stamp(*m_time);
 }
 
 void WeatherWidget::configureColors() {

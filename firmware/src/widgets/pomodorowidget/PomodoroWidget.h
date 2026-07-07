@@ -49,6 +49,7 @@ private:
     void drawTomato(int cx, int cy, int r, uint32_t bodyColor, uint32_t bodyLight, uint32_t leafColor);
     void drawMiniTomato(int x, int y, bool filled, bool highlighted);
     uint32_t accentColorForPhase(Phase phase);
+    int activeFocusNumber(); // derived from m_completedFocusCount + m_phase, valid during FOCUS/SHORT_BREAK
     String phaseRunningLabel();
     String phaseCompletedLabel();
     bool isFlashing();
@@ -60,11 +61,11 @@ private:
     bool m_timerRunning = false;
     bool m_awaitingAdvance = false;
     int m_completedFocusCount = 0; // 0-4, focus sessions completed in the current cycle
-    int m_currentFocusNumber = 0; // 1-4, which focus session is running/just finished
 
     unsigned long m_phaseStartMillis = 0;
     unsigned long m_phaseDurationMs = 0;
-    unsigned long m_flashEndMillis = 0; // completion pulse cue runs until this millis() timestamp
+    bool m_flashActive = false;
+    unsigned long m_flashStartMillis = 0; // completion pulse cue runs for FLASH_DURATION_MS from this timestamp
 
     // Redraw caches, so each orb is only repainted when something it shows actually changed
     int m_lastClockStamp = -1; // hour*60+minute
