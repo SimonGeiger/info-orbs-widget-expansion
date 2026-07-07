@@ -20,6 +20,9 @@
 #ifdef MQTT_WIDGET_HOST
     #include "mqttwidget/MQTTWidget.h"
 #endif
+#ifdef CALENDAR_ICS_URL
+    #include "calendarwidget/CalendarWidget.h"
+#endif
 
 TFT_eSPI tft = TFT_eSPI();
 
@@ -97,7 +100,7 @@ void setup() {
     sm->drawCentreString("by", ScreenCenterX, ScreenCenterY - 5, 22);
     sm->drawCentreString("brett.tech", ScreenCenterX, ScreenCenterY + 30, 22);
     sm->setFontColor(TFT_RED);
-    sm->drawCentreString("version: 1.1.0", ScreenCenterX, ScreenCenterY + 65, 14);
+    sm->drawCentreString("version: 1.2.0", ScreenCenterX, ScreenCenterY + 65, 14);
 
     sm->selectScreen(2);
 
@@ -137,6 +140,9 @@ void setup() {
 #endif
 #ifdef MQTT_WIDGET_HOST
     widgetSet->add(new MQTTWidget(*sm, MQTT_WIDGET_HOST, MQTT_WIDGET_PORT));
+#endif
+#ifdef CALENDAR_ICS_URL
+    widgetSet->add(new CalendarWidget(*sm, CALENDAR_ICS_URL));
 #endif
 
     m_widgetCycleDelayPrev = millis();
